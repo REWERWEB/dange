@@ -52,7 +52,7 @@ const server = http.createServer((req, res) => {
     vorne_rechts: [1, -1.15, 0.55, 'p'], vorne_links: [1, 1.1, 0.5, 'p'],
     hinten_links: [-1, 1.15, 0.55, 'p'], hinten_rechts: [-1, -1.1, 0.5, 'p'],
     seite: [0, -1, 0, 'o'], seite_links: [0, 1, 0, 'o'], front: [1, 0, 0, 'o'], heck: [-1, 0, 0, 'o'],
-    oben: [0.3, -0.5, 1, 'p'], unten: [0.2, -0.3, -1, 'p'], detail_front: [1, -0.55, 0.25, 'p'],
+    oben: [0.3, -0.5, 1, 'p'], unten: [0.2, -0.3, -1, 'p'], detail_front: [1, -0.55, 0.25, 'p'], nah_front: [1, -0.45, 0.2, 'n'], nah_heck: [-1, 0.5, 0.25, 'n'], nah_seite: [0.25, -1, 0.15, 'n'],
   };
   for (const name of viewsArg.split(',')) {
     const [x, y, z, kind] = views[name];
@@ -64,7 +64,7 @@ const server = http.createServer((req, res) => {
         const h = s * 0.36; cam = new T.OrthographicCamera(-h * 4 / 3, h * 4 / 3, h, -h, 0.1, s * 10);
       } else { cam = new T.PerspectiveCamera(kind === 'p' ? 28 : 30, 4 / 3, 0.1, s * 10); }
       const dir = new T.Vector3(x, y, z).normalize();
-      const dist = kind === 'o' ? s * 2 : s * 1.55;
+      const dist = kind === 'o' ? s * 2 : (kind === 'n' ? s * 0.95 : s * 1.55);
       cam.position.copy(c).addScaledVector(dir, dist);
       cam.up.set(0, 0, 1); cam.lookAt(c);
       renderer.render(scene, cam);

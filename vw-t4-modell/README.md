@@ -6,12 +6,13 @@ Heckansicht des T4 Kurzschnauze (Baujahr 1990) abgeglichen.
 
 ![Mehrfarbig](vorschau_farbig.png)
 ![Einfarbig](vorschau_einfarbig.png)
+![Details](vorschau_details.png)
 
 ## Dateien
 
 | Datei | Inhalt |
 |---|---|
-| `vw_t4_1-30.stl` | **Empfohlen.** 1:30, 159 × 73 × 65 mm, ein Körper |
+| `vw_t4_1-30.stl` | **Empfohlen.** 1:30, 160 × 73 × 69 mm (mit Antenne), ein Körper, ca. 22 MB |
 | `vw_t4_1-30_sockel.stl` | 1:30 mit Unterboden-Sockel, kommt ohne Stützen aus (von der Seite sieht man den Sockel) |
 | `vw_t4_1-43.stl` | 1:43, 111 × 51 × 45 mm |
 | `mehrfarbig_1-30/*.stl` | Teile je Farbe für das AMS (siehe unten) |
@@ -38,13 +39,33 @@ Heckansicht des T4 Kurzschnauze (Baujahr 1990) abgeglichen.
 - Radläufe mit Lippe und schwarzer Radhaus-Auskleidung, Stahlfelgen mit
   Radkappe, Reifen mit Profil
 
+Feindetails (seit Version 3):
+- Gummidichtungen um alle Scheiben (erhaben, schwarz)
+- Kühlergrill mit 4 + 3 Lamellen und Stegen. Die Scheinwerfer haben
+  Chromrahmen, sind zweigeteilt und haben gerippte Gläser. Die Blinker sind gerippt.
+- Rückleuchten mit Kammer-Rillen, Griffleiste mit Kennzeichenleuchte über dem
+  hinteren Kennzeichen, Kennzeichen mit Rand
+- Scheibenwischer mit Armen und Achsen, dazu ein Heckwischer. Das Windlaufgitter hat feine Schlitze.
+- Türgriffe als schwarze Griffe in Griffmulden, Spiegel mit Spiegelglas
+- Vorderer Stoßfänger mit unterem Lufteinlass (5 Stege) und Abdeckung der Abschleppöse,
+  hinterer Stoßfänger mit Trittrippen an der Ladekante
+- Reifen mit Längsrillen, Schulter- und versetzten Mittelblöcken. Die Flanke hat ein Schriftband.
+  Radkappe mit 12 Rippen, Nabendeckel und Ventil.
+- Antennenfuß auf dem Dach, Auspuff-Endrohr hinten links
+- Feinere Netzauflösung (glatte, umlaufende Frontscheibe)
+
 Logos sind absichtlich nicht enthalten.
+
+Hinweise zu den feinen Teilen: Der Antennenstab ist bei 1:30 nur 0,7 mm dick
+und kann abbrechen. Wer ihn nicht will, entfernt ihn in `vw_t4.py` (Zeile mit `ant +=`).
+Bei 1:43 sind Lamellen und Rippen nur noch etwa 0,3 mm breit. Dafür eine
+0,2-mm-Düse verwenden oder mit leichtem Detailverlust rechnen.
 
 ## Druck auf dem Bambu Lab P2S (Bambu Studio)
 
 **Einfarbig (`vw_t4_1-30.stl`)**
 - Ausrichtung: auf den Rädern lassen (so, wie die Datei geladen wird)
-- Profil: 0,4-mm-Düse, *0.12 mm Fine* (oder *0.08 mm Extra Fine* für feinere Fugen)
+- Profil: 0,4-mm-Düse, *0.08 mm Extra Fine* für die feinen Rippen (oder *0.12 mm Fine*)
 - Wände 3, Füllung 10–15 % Gyroid
 - Stützen: **Tree (auto), „nur auf der Druckplatte“**. Gestützt werden der
   flache Unterboden, die Stoßfänger-Unterseiten und die Spiegel. Wer keine
@@ -68,8 +89,8 @@ Logos sind absichtlich nicht enthalten.
 
 Mit nur 4 AMS-Slots: Glas schwarz drucken und die Scheinwerfer in Weiß,
 dann reichen Weiß, Schwarz, Silber und Orange; die roten Leuchten werden dann
-z. B. orange oder später bemalt. Das Teil `karosserie` hat 2 winzige
-Netzfehler, die Bambu Studio beim Import selbst repariert.
+z. B. orange oder später bemalt. Das Teil `karosserie` hat ein paar winzige
+Kantenfehler an den Fensterdichtungen. Die einfarbigen STLs sind fehlerfrei.
 
 ## Anpassen
 

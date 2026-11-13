@@ -95,7 +95,8 @@ def pillar_x(z):
 # ---------------------------------------------------------------------------
 # Geometrie-Helfer
 # ---------------------------------------------------------------------------
-NS, NF, NR, K = 70, 18, 14, 14
+NS, NF, NR, K = 120, 24, 18, 16
+KF = 40   # Punkte je vorderer Ecke (umlaufende Frontscheibe)
 
 
 def plan_ring(xr, xf, w, rr, rf):
@@ -106,11 +107,11 @@ def plan_ring(xr, xf, w, rr, rf):
     a0 = np.linspace(0, 1, NS + 2)[1:-1]
     for t in a0:                                    # rechte Seite y=-w
         pts.append((xr + rr + t * (xf - rf - xr - rr), -w))
-    for a in np.linspace(-np.pi / 2, 0, K):         # vorn rechts
+    for a in np.linspace(-np.pi / 2, 0, KF):        # vorn rechts
         pts.append((xf - rf + rf * np.cos(a), -w + rf + rf * np.sin(a)))
     for t in np.linspace(0, 1, NF + 2)[1:-1]:       # Front
         pts.append((xf, -w + rf + t * 2 * (w - rf)))
-    for a in np.linspace(0, np.pi / 2, K):          # vorn links
+    for a in np.linspace(0, np.pi / 2, KF):         # vorn links
         pts.append((xf - rf + rf * np.cos(a), w - rf + rf * np.sin(a)))
     for t in a0:                                    # linke Seite
         pts.append((xf - rf - t * (xf - rf - xr - rr), w))
@@ -146,7 +147,7 @@ def loft_z(zs, ring_fn):
     return m
 
 
-def z_stations(z0, z1, edges=((0, 110, 2.0),), top=160, dz=8.0):
+def z_stations(z0, z1, edges=((0, 110, 2.0),), top=160, dz=5.0):
     zs = list(np.arange(z0, z0 + 110, 2.5))
     zs += list(np.arange(z0 + 110, z1 - top, dz))
     zs += list(np.arange(z1 - top, z1, 2.0)) + [z1]
@@ -261,27 +262,40 @@ def bumper_loft(x0, x1, hw, r_front, r_rear, z0, z1, r_edge=45):
 
 def wheel_parts():
     """Reifen und Stahlfelge mit Radkappe, Achse = z, aussen = +z."""
-    seg = 128
+    seg = 180
     tire = Manifold.revolve(rrect(208, WHEEL_R, -TIRE_HALF, TIRE_HALF, 38), seg)
-    for h in (-55, -18, 18, 55):
+    # Laengsrillen
+    for h in (-50, 0, 50):
         tire -= Manifold.revolve(rrect(WHEEL_R - 8, WHEEL_R + 30, h - 6, h + 6), seg)
-    # Querrillen im Profil (Schulter)
-    for i in range(48):
-        a = 360.0 * i / 48
-        g = box(WHEEL_R - 9, WHEEL_R + 30, -8, 8, 60, TIRE_HALF + 10).rotate([0, 0, a])
-        tire -= g + g.mirror([0, 0, 1])
+    # Querrillen: Schulterbloecke und versetzte Mittelbloecke
+    cuts = []
+    for i in range(72):
+        a = 360.0 * i / 72
+        g = box(WHEEL_R - 9, WHEEL_R + 30, -6, 6, 56, TIRE_HALF + 10).rotate([0, 0, a])
+        cuts += [g, g.mirror([0, 0, 1])]
+        b = box(WHEEL_R - 6, WHEEL_R + 30, -5, 5, 6, 44).rotate([0, 0, a + 2.5])
+        cuts += [b, b.mirror([0, 0, 1]).rotate([0, 0, 2.5])]
+    tire -= union(cuts)
+    # Felgenschutzwulst und Schriftband an der Flanke
     tire -= Manifold.revolve(rrect(208, 222, TIRE_HALF - 14, TIRE_HALF + 5), seg)
+    tire -= Manifold.revolve(rrect(262, 290, TIRE_HALF - 3, TIRE_HALF + 5), seg)
 
     prof = [(0, -90), (212, -90), (212, 60), (200, 66), (186, 56), (150, 50),
             (150, 54), (0, 54)]
     rim = Manifold.revolve(CrossSection([np.array(prof, float)]), seg)
-    # Radkappe (fruehe T4-Kunststoffkappe: flache Schuessel mit Rippen)
-    cap_prof = [(0, 50), (176, 50), (176, 58), (165, 68), (120, 76), (60, 80), (0, 81)]
+    # Radkappe (fruehe T4-Kunststoffkappe: Schuessel mit Rippen und Nabendeckel)
+    cap_prof = [(0, 50), (176, 50), (176, 58), (168, 66), (125, 76), (62, 81), (0, 82)]
     cap = Manifold.revolve(CrossSection([np.array(cap_prof, float)]), seg)
-    for i in range(10):
-        a = 360.0 * i / 10
-        cap -= box(95, 160, -8, 8, 70, 90).rotate([0, 0, a])
-    cap -= Manifold.revolve(rrect(0, 38, 77, 95), 64)
+    ribs = []
+    for i in range(12):
+        a = 360.0 * i / 12
+        ribs.append(box(88, 162, -7, 7, 72, 92).rotate([0, 0, a]))
+        ribs.append(Manifold.cylinder(40, 9, 9, 24).translate([170, 0, 40]).rotate([0, 0, a + 15]))
+    cap -= union(ribs)
+    cap -= Manifold.revolve(rrect(0, 44, 79, 95), 64)
+    cap += Manifold.revolve(rrect(0, 30, 70, 86, 6), 64)
+    # Ventil
+    rim += Manifold.cylinder(26, 9, 7, 16).translate([190, 0, 52]).rotate([0, 0, 200])
     return tire, rim + cap
 
 
@@ -328,9 +342,16 @@ def build(sockel=False):
         rounded([(2765, 1282), (3590, 1282), (3205, 1810), (2765, 1810)], 55),  # Tuer
     ]
     sidewin = union([prism_xz(c, 500, 1200) for c in win])
+    seal_side = union([prism_xz(c.offset(16, JoinType.Round, circular_segments=24), 500, 1200)
+                       for c in win]) - sidewin
+    ws_cs = rounded(ws_poly, 45)
+    seal_ws = prism_xz(ws_cs.offset(16, JoinType.Round, circular_segments=24), -1100, 1100) - \
+        prism_xz(ws_cs, -1100, 1100)
+    seal_rw = prism_yz(rrect(-629, 629, 1331, 1899, 109), -200, 700) - \
+        prism_yz(rrect(-617, 617, 1345, 1885, 95), -200, 700)
     glass_cut.append(mirror_y(sidewin))
     # Heckscheibe
-    glass_cut.append(prism_yz(rrect(-645, 645, 1345, 1885, 95), -200, 700))
+    glass_cut.append(prism_yz(rrect(-617, 617, 1345, 1885, 95), -200, 700))
     glass_region = union(glass_cut)
     glass_recess = glass_region - in18
     glass_part = glass_region ^ (in6 - in18)
@@ -371,19 +392,34 @@ def build(sockel=False):
     ]) - in12
 
     body = body - union([glass_recess, groove_cut, front_cut, small])
+    out5 = body_offset(5)
+    in9 = body_offset(-9)
+    seal_side_part = mirror_y(seal_side) ^ out5 - in9
+    seal_ws_part = seal_ws ^ out5 - in9
+    seal_rw_part = seal_rw ^ out5 - in9
 
     # ---------------- Einsaetze / Reliefs in den Vertiefungen -----------
     P["glas"] = glass_part
     # Kuehlergrill: Lamellen
-    slats = union([box(X_FACE - 40, X_FACE - 8, -465, 465, zc - 10, zc + 10)
-                   for zc in (885, 920, 955, 730, 765)])
+    slats = union([box(X_FACE - 40, X_FACE - 8, -466, 466, zc - 7, zc + 7)
+                   for zc in (875, 903, 931, 959, 722, 748, 774)] +
+                  [box(X_FACE - 40, X_FACE - 8, yc - 7, yc + 7, 700, 986)
+                   for yc in (-240, 240)])
     grille_fill = (grille_up + grille_lo) ^ (in18 - in30)
     P["schwarz_grill"] = union([grille_fill, slats ^ (body_offset(-8) - in30)])
     # Scheinwerfer (zweigeteilt) und Blinker
-    lens = mirror_y(union([box(X_FACE - 40, X_FACE - 12, 492, 590, 862, 978),
-                           box(X_FACE - 40, X_FACE - 12, 600, 702, 862, 978)]))
-    P["scheinwerfer"] = lens
-    P["orange"] = indic ^ (in6 - in18)
+    lens = union([box(X_FACE - 40, X_FACE - 16, 494, 588, 864, 976),
+                  box(X_FACE - 40, X_FACE - 16, 602, 700, 864, 976)])
+    lens_ribs = union([box(X_FACE - 20, X_FACE - 11, 494, 700, zc - 5, zc + 5)
+                       for zc in (885, 910, 935, 958)] +
+                      [box(X_FACE - 20, X_FACE - 11, yc - 5, yc + 5, 864, 976)
+                       for yc in (541, 651)])
+    P["scheinwerfer"] = mirror_y(lens + lens_ribs)
+    bezel = mirror_y(box(X_FACE - 40, X_FACE - 14, 482, 712, 852, 988) -
+                     box(X_FACE - 60, X_FACE, 492, 702, 862, 978))
+    ind = indic ^ (in6 - in18)
+    ind -= union([box(4300, 5000, -1100, 1100, zc - 4, zc + 4) for zc in (885, 920, 955)]) - in12
+    P["orange"] = ind
 
     # ---------------- Stossfaenger, Leuchten, Spiegel, Leisten ----------
     fb = bumper_loft(4282, 4742, 936, 265, 25, Z_FLOOR, 688)
@@ -391,38 +427,76 @@ def build(sockel=False):
                                                               Z_FLOOR + 10, 678)
     fb -= box(4000, 5000, -1200, 1200, 350, 360) - bumper_loft(4295, 4729, 923, 252, 20,
                                                               Z_FLOOR + 10, 678)
-    fb += box(4730, 4752, -262, 262, 420, 532)                 # Kennzeichenplatte
+    fb -= box(4715, 4800, -430, 430, 322, 392)                 # unterer Lufteinlass
+    fb += union([box(4700, 4735, yc - 8, yc + 8, 322, 392) for yc in (-286, -143, 0, 143, 286)])
+    fb -= box(4715, 4800, -720, -640, 470, 520)                # Abschleppoese-Deckel
+    fb += box(4730, 4752, -262, 262, 420, 532)                 # Kennzeichenhalter
     rb = bumper_loft(-28, 470, 936, 25, 210, Z_FLOOR, 688)
     rb -= box(-200, 330, -650, 650, 495, 900)                  # Ladekante tiefer
+    rb += union([box(-24, 30, yc - 7, yc + 7, 490, 501) for yc in range(-600, 601, 40)])  # Trittrippen
     rb -= box(-200, 600, -1200, 1200, 598, 610) - bumper_loft(-15, 457, 923, 20, 197,
                                                              Z_FLOOR + 10, 678)
     # Kennzeichen hinten
     plate_r = box(-20, 200, -258, 258, 722, 833) - in12 ^ body_offset(-4)
     # Heckleuchten (erhaben, um die Ecke gezogen): oben rot, unten orange
     lamp = mirror_y(box(-80, 175, 652, 1000, 700, 872)) ^ out12
+    lamp -= union([box(-200, 400, -1200, 1200, zc - 4, zc + 4)
+                   for zc in (742, 818, 846)]) - body_offset(4)
     lamp_r = lamp ^ box(-200, 400, -1200, 1200, 790, 900)
     lamp_o = lamp ^ box(-200, 400, -1200, 1200, 600, 782)
     # Schiebetuerschiene (Abdeckung) rechts
     rail = box(275, 1430, -1200, -560, 1032, 1078) ^ body_offset(14)
     # Aussenspiegel (Unterseite 45 Grad)
-    arm = hull([[3500, 860, 1340], [3585, 860, 1340], [3500, 860, 1420], [3585, 860, 1420],
-                [3505, 950, 1400], [3580, 950, 1400], [3505, 950, 1450], [3580, 950, 1450]])
+    arm = hull([[3501, 857, 1337], [3587, 857, 1337], [3501, 857, 1421], [3587, 857, 1421],
+                [3506, 951, 1401], [3581, 951, 1401], [3506, 951, 1453], [3581, 951, 1453]])
     housing = hull([[3478, 930, 1370], [3602, 930, 1370], [3478, 1085, 1470], [3602, 1085, 1470],
                     [3478, 930, 1545], [3602, 930, 1545], [3478, 1090, 1545], [3602, 1090, 1545]])
     mirr = (arm + housing) - box(3440, 3486, 950, 1072, 1475, 1532)
     mirr = mirror_y(mirr)
     # Scheibenwischer (in Ruhestellung unten auf der Scheibe)
-    wip = union([prism_yz(seg_poly((y0, 1392), (y0 + sg * 560, 1428), 24), 3900, 4300)
+    wip = union([prism_yz(seg_poly((y0, 1392), (y0 + sg * 560, 1428), 16), 3900, 4300)
                  for y0, sg in ((-700, 1), (-60, 1))])
     wip = (wip ^ body_offset(9)) - body_offset(-26)
     # Windlauf-Gitter (schwarz)
     cowl = box(4148, 4250, -780, 780, 1300, 1400) ^ body_offset(5)
-    cowl -= union([box(4150, 4240, y - 8, y + 8, 1300, 1400) for y in range(-700, 701, 70)]) - body
+    cowl -= union([box(4156, 4236, y - 6, y + 6, 1300, 1400) for y in range(-720, 721, 36)]) - body
 
     P["schwarz"] = union([fb, rb, rail, mirr, wip, cowl])
     P["rot"] = lamp_r
     P["orange_heck"] = lamp_o
-    P["silber"] = plate_r + box(4742, 4752, -250, 250, 430, 522)
+    plate_f = box(4742, 4754, -250, 250, 430, 522) - box(4750, 4760, -240, 240, 440, 512)
+    P["silber"] = plate_r + plate_f
+    # Griffe (schwarz) in den Griffmulden, Kennzeichenleuchten-Griffleiste hinten
+    handles = union([
+        mirror_y(box(2752, 2838, 560, 1100, 1133, 1152)),
+        box(2572, 2658, -1100, -560, 1133, 1152),
+        box(-200, 400, -200, 200, 862, 893),
+    ]) ^ body_offset(3) - in18
+    # Aussenspiegel-Glas
+    mglass = mirror_y(box(3476, 3492, 960, 1064, 1481, 1526))
+    # Wischerarme mit Achsen
+    arms = union([prism_yz(seg_poly((y0, 1365), (y0 + 300, 1418), 16), 3900, 4320)
+                  for y0 in (-640, 0)])
+    arms = (arms ^ body_offset(12)) - body_offset(-26)
+    pivots = union([Manifold.cylinder(60, 26, 22, 24).rotate([0, 50, 0]).translate([4185, y0, 1345])
+                    for y0 in (-640, 0)])
+    # Heckwischer
+    rwip = prism_yz(seg_poly((-560, 1372), (20, 1372), 22), -200, 700)
+    rwip += prism_yz(seg_poly((20, 1318), (-260, 1372), 16), -200, 700)
+    rwip = (rwip ^ body_offset(10)) - body_offset(-26)
+    rpiv = Manifold.cylinder(70, 28, 24, 24).rotate([0, -90, 0]).translate([150, 20, 1318])
+    rpiv ^= body_offset(12)
+    # Antennenfuss auf dem Dach (vorn links) und Auspuffendrohr
+    ant = hull([[3080, 480, 1900], [3200, 480, 1900], [3080, 540, 1900], [3200, 540, 1900],
+                [3100, 495, 1985], [3170, 495, 1985], [3100, 525, 1985], [3170, 525, 1985]])
+    ant += Manifold.cylinder(120, 10, 8, 16).translate([3135, 510, 1950])
+    exh = Manifold.cylinder(420, 32, 32, 32).rotate([0, -90, 0]).translate([380, 560, 265])
+    exh -= Manifold.cylinder(60, 22, 22, 32).rotate([0, -90, 0]).translate([-15, 560, 265])
+    exh += box(300, 340, 540, 580, 260, 330)
+    P["schwarz_details"] = union([handles, arms, pivots, rwip, rpiv, exh,
+                                  seal_side_part, seal_ws_part, seal_rw_part])
+    P["silber"] = union([P["silber"], mglass, bezel])
+    body = body + ant
 
     # ---------------- Radlaeufe ausschneiden ------------------------------
     arch = union([mirror_y(cyl_y(xa, WHEEL_R, ARCH_R, 640, 1200)) for xa in (X_RA, X_FA)])
@@ -430,7 +504,7 @@ def build(sockel=False):
     P["schwarz"] -= arch
     # Radhaus-Auskleidung (schwarz) als duenne Schale im Radlauf
     liner = union([mirror_y(cyl_y(xa, WHEEL_R, ARCH_R + 14, 626, 1200, 149)) for xa in (X_RA, X_FA)])
-    P["radhaus"] = body ^ liner ^ box(-500, 5500, -1300, 1300, Z_FLOOR + 110, 2500)
+    P["radhaus"] = body ^ liner ^ box(-500, 5500, -1300, 1300, Z_FLOOR + 113.3, 2500)
 
     # ---------------- Raeder + Achsstummel --------------------------------
     tire, rim = wheel_parts()
@@ -473,8 +547,8 @@ def finalize(P, scale, cut=8.0):
     plane = box(-1000, 6000, -2000, 2000, cut, 3000)
     out = {k: (v ^ plane).translate([0, 0, -cut]).scale([s, s, s]) for k, v in P.items()}
     total = union(list(out.values()))
-    # Einfarbig: Glas und Front-Blinker bleiben vertieft (keine Einsaetze)
-    single = union([out[k] for k in out if k not in ("glas", "orange")])
+    # Einfarbig: Scheiben bleiben vertieft (kein Glas-Einsatz)
+    single = union([out[k] for k in out if k != "glas"])
     bb = total.bounding_box()
     shift = [-(bb[0] + bb[3]) / 2, -(bb[1] + bb[4]) / 2, 0]
     single = single.translate(shift)
@@ -482,8 +556,8 @@ def finalize(P, scale, cut=8.0):
     merged = dict(out)
     merged["orange"] = union([out["orange"], out["orange_heck"]])
     merged["schwarz"] = union([out["schwarz"], out["schwarz_grill"], out["radhaus"],
-                               out["reifen"]])
-    for k in ("orange_heck", "schwarz_grill", "radhaus", "reifen"):
+                               out["reifen"], out["schwarz_details"]])
+    for k in ("orange_heck", "schwarz_grill", "radhaus", "reifen", "schwarz_details"):
         del merged[k]
     for k in ORDER:
         raw = merged[k].translate(shift) - taken
