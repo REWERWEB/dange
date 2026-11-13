@@ -14,7 +14,7 @@ Heckansicht des T4 Kurzschnauze (Baujahr 1990) abgeglichen.
 |---|---|
 | `vw_t4_1-30.stl` | **Empfohlen.** 1:30, 160 × 73 × 69 mm (mit Antenne), ein Körper, ca. 22 MB |
 | `vw_t4_1-30_sockel.stl` | 1:30 mit Unterboden-Sockel, kommt ohne Stützen aus (von der Seite sieht man den Sockel) |
-| `vw_t4_1-43.stl` | 1:43, 111 × 51 × 45 mm |
+| `vw_t4_1-43.stl` | 1:43, 112 × 51 × 48 mm (mit Antenne) |
 | `mehrfarbig_1-30/*.stl` | Teile je Farbe für das AMS (siehe unten) |
 | `vw_t4.py` | Generator-Skript (Python, manifold3d) |
 | `render_chromium.js` | Vorschau-Renderer (three.js in Chromium) |
@@ -90,7 +90,8 @@ Bei 1:43 sind Lamellen und Rippen nur noch etwa 0,3 mm breit. Dafür eine
 Mit nur 4 AMS-Slots: Glas schwarz drucken und die Scheinwerfer in Weiß,
 dann reichen Weiß, Schwarz, Silber und Orange; die roten Leuchten werden dann
 z. B. orange oder später bemalt. Das Teil `karosserie` hat ein paar winzige
-Kantenfehler an den Fensterdichtungen. Die einfarbigen STLs sind fehlerfrei.
+Kantenfehler an den Fensterdichtungen, die Bambu Studio beim Import
+reparieren sollte. Die einfarbigen STLs sind fehlerfrei.
 
 ## Anpassen
 
